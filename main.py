@@ -1,5 +1,15 @@
 
 import streamlit as st
 
-location = input("Where do you want to check the whether? ")
-print(f"Weather in {location} is 50 degress with clear skies.")
+st.markdown("""
+
+# Title
+## Subtitle
+
+- bullet 1 
+- bullet 2 
+- bullet 3 
+
+> Amazing quote
+""")
+
