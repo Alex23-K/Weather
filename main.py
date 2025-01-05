@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
-
+from datetime import datetime, timedelta
 
 
 # API Key and Base URL
@@ -49,66 +49,75 @@ def fetch_historical(city, date):
 
 
 # Streamlit UI
-st.title("Weather App - check the weather in any city worldwide")
+st.title("Welcome the best weather App \n"
+         "Check the weather in any city worldwide")
 
-# Input for city name
-city = st.text_input("What is the city's name to check?", "")
+# Make the input prompt larger
+st.markdown("### What is the city's name you would like to check?")
+
+# Adjust the input field width
+city = st.text_input("", "", max_chars=25)
+
+
+# Auto-correct for Holon to default to Israel
+if city.lower() == "holon":
+    city = "Holon, Israel"
+
 
 if city:
     weather_data = fetch_weather(city)
     if weather_data:
-        country = weather_data['location']['country']
-        if country == "Iran":
-            st.error("Weather data for Iran is not available.")
-        else:
-            # Current Weather
-            location = f"{weather_data['location']['name']}, {country}"
-            temp_c = weather_data['current']['temp_c']
-            feels_like = weather_data['current']['feelslike_c']
-            condition = weather_data['current']['condition']['text']
-            icon_url = f"https:{weather_data['current']['condition']['icon']}"
+        # Current Weather
+        location = f"{weather_data['location']['name']}, {weather_data['location']['country']}"
+        temp_c = weather_data['current']['temp_c']
+        feels_like = weather_data['current']['feelslike_c']
+        condition = weather_data['current']['condition']['text']
+        icon_url = f"https:{weather_data['current']['condition']['icon']}"
 
-            st.subheader(f"Weather in {location}")
-            st.image(icon_url, width=100)
-            st.write(f"**Temperature:** {temp_c}°C")
-            st.write(f"**Feels Like:** {feels_like}°C")
-            st.write(f"**Condition:** {condition}")
+        st.subheader(f"Weather in {location}")
+        st.image(icon_url, width=100)
+        st.write(f"**Current temperature:** {temp_c}°C")
+        st.write(f"**Feels Like:** {feels_like}°C")
+        st.write(f"**Condition:** {condition}")
 
-            # Forecast
-            forecast_data = fetch_forecast(city)
-            if forecast_data:
-                st.subheader("3-Day Forecast")
-                forecast_days = forecast_data['forecast']['forecastday']
-                forecast_df = pd.DataFrame([
-                    {
-                        "Date": day['date'],
-                        "Max Temp (°C)": day['day']['maxtemp_c'],
-                        "Min Temp (°C)": day['day']['mintemp_c']
-                    }
-                    for day in forecast_days
-                ])
-                st.table(forecast_df)
+        # Forecast
+        forecast_data = fetch_forecast(city)
+        if forecast_data:
+            st.subheader("")
+            forecast_days = forecast_data['forecast']['forecastday']
+            forecast_df = pd.DataFrame([
+                {
+                    "Date": datetime.strptime(day['date'], "%Y-%m-%d").strftime("%d/%m/%Y"),
+                    "Max Temp (°C)": day['day']['maxtemp_c'],
+                    "Min Temp (°C)": day['day']['mintemp_c']
+                }
+                for day in forecast_days
+            ])
+            # Ensure proper rounding for display
+            forecast_df[["Max Temp (°C)", "Min Temp (°C)"]] = forecast_df[["Max Temp (°C)", "Min Temp (°C)"]].round(1)
 
-                # Plotting Forecast
-                st.subheader("Temperature Forecast")
-                plt.figure(figsize=(8, 5))
-                plt.plot(forecast_df['Date'], forecast_df['Max Temp (°C)'], marker='o', label="Max Temp")
-                plt.plot(forecast_df['Date'], forecast_df['Min Temp (°C)'], marker='o', label="Min Temp")
-                plt.title("Temperature Forecast (°C)")
-                plt.xlabel("Date")
-                plt.ylabel("Temperature (°C)")
-                plt.legend()
-                st.pyplot(plt)
 
-            # Historical Data
-            st.subheader("Historical Comparison")
-            from datetime import datetime, timedelta
-            today = datetime.now()
-            past_date = (today - timedelta(days=365)).strftime("%Y-%m-%d")
-            historical_data = fetch_historical(city, past_date)
-            if historical_data:
-                historical_temp = historical_data['forecast']['forecastday'][0]['day']['avgtemp_c']
-                st.write(f"**Historical Avg Temp (1 year ago):** {historical_temp}°C")
-                st.write(f"**Temperature Difference:** {temp_c - historical_temp:.1f}°C")
+            # Bar Graph for Forecast
+            st.subheader("3-Day Temperature Forecast")
+            forecast_df.set_index("Date", inplace=True)
+            forecast_df.plot(kind='bar', figsize=(8, 5))
+            plt.title("Temperature Forecast (°C)")
+            plt.ylabel("Temperature (°C)")
+            plt.xlabel("Date")
+            plt.xticks(rotation=0)  # Horizontal x-axis labels
+            st.pyplot(plt)
+
+        # Historical Data
+        st.subheader("Historical Comparison")
+        today = datetime.now()
+        past_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        historical_data = fetch_historical(city, past_date)
+        if historical_data:
+            historical_temp = historical_data['forecast']['forecastday'][0]['day']['avgtemp_c']
+            temp_difference = temp_c - historical_temp
+            if temp_difference > 0:
+                st.write(f"**Today is warmer by {temp_difference:.1f}°C compared to the previous year in the same week (was {historical_temp:.1f}°C).**")
+            else:
+                st.write(f"**Today is colder by {abs(temp_difference):.1f}°C compared to the previous year in the same week (was {historical_temp:.1f}°C).**")
     else:
         st.error("Failed to fetch weather data. Please check the city name and try again.")
