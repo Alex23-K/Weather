@@ -3,13 +3,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import requests
 from datetime import datetime, timedelta
+import pytz
 
+# Define the Jerusalem timezone
+jerusalem_tz = pytz.timezone('Asia/Jerusalem')
 
 # API Key and Base URL
 API_KEY = "f935fae84b5f4044931182757250501"
 BASE_URL = "http://api.weatherapi.com/v1/current.json"
 BASE_URL_FORECAST = "http://api.weatherapi.com/v1/forecast.json"
 BASE_URL_HISTORY = "http://api.weatherapi.com/v1/history.json"
+
 
 
 def fetch_weather(city):
@@ -24,7 +28,8 @@ def fetch_weather(city):
     else:
         return None
 
-def fetch_forecast(city, days=3):
+
+def fetch_forecast(city, days=4):
     """
     Fetch forecast data for the given city using WeatherAPI.
     """
@@ -56,11 +61,9 @@ st.markdown("### What is the city's name you would like to check?")
 # Adjust the input field width
 city = st.text_input("", "", max_chars=25)
 
-
 # Auto-correct for Holon to default to Israel
 if city.lower() == "holon":
     city = "Holon, Israel"
-
 
 if city:
     weather_data = fetch_weather(city)
@@ -78,39 +81,39 @@ if city:
         st.write(f"**Feels Like:** {feels_like}°C")
         st.write(f"**Condition:** {condition}")
 
-
         # Forecast
-        forecast_data = fetch_forecast(city)
+        forecast_data = fetch_forecast(city, days=4)  # Fetch 4 days to ensure 3 future days after excluding today
         if forecast_data:
 
             forecast_days = forecast_data['forecast']['forecastday']
 
+            # Exclude today's forecast
+            today_date = datetime.now().strftime('%Y-%m-%d')
+            future_days = [day for day in forecast_days if day['date'] != today_date][:3]  # Keep only 3 future days
+
             # Calculate average chance of rain
-            avg_rain_chance = sum(day['day']['daily_chance_of_rain'] for day in forecast_days) / len(forecast_days)
+            avg_rain_chance = sum(day['day']['daily_chance_of_rain'] for day in future_days) / len(future_days)
 
             # Determine the most frequent weather condition
-            conditions = [day['day']['condition']['text'] for day in forecast_days]
+            conditions = [day['day']['condition']['text'] for day in future_days]
             most_frequent_condition = max(set(conditions), key=conditions.count).lower()
 
 
-
-            # 3-Day Forecast Table
-
+            # Prepare data for the bar chart excluding today's forecast
             forecast_df = pd.DataFrame([
                 {
                     "Date": datetime.strptime(day['date'], "%Y-%m-%d").strftime("%d/%m/%Y"),
                     "Max Temp (°C)": day['day']['maxtemp_c'],
                     "Min Temp (°C)": day['day']['mintemp_c']
                 }
-                for day in forecast_days
+                for day in future_days  # Use future_days to exclude today
             ])
 
+            # 3-Day Forecast Bar Chart and summary for the condition
 
-            # 3 daya forecast and the Bar chart
+
 
             st.subheader("3-Day temperature forecast")
-            # Ensure proper rounding for display
-            forecast_df[["Max Temp (°C)", "Min Temp (°C)"]] = forecast_df[["Max Temp (°C)", "Min Temp (°C)"]].round(1)
 
             # Generate summary sentence
             if avg_rain_chance > 50:
@@ -121,6 +124,7 @@ if city:
                     f"The next 3 days are expected to be mostly {most_frequent_condition} with no rain expectancy.")
 
 
+            forecast_df[["Max Temp (°C)", "Min Temp (°C)"]] = forecast_df[["Max Temp (°C)", "Min Temp (°C)"]].round(1)
             forecast_df.set_index("Date", inplace=True)
             forecast_df.plot(kind='bar', figsize=(8, 5))
             plt.title("Temperature Forecast (°C)")

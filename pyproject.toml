@@ -16,6 +16,7 @@ pandas = "^2.2.3"
 numpy = "^2.2.1"
 matplotlib = "^3.10.0"
 datetime = "^5.5"
+pytz = "^2024.2"
 
 
 [build-system]
