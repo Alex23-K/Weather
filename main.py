@@ -108,7 +108,7 @@ if city:
 
             # 3 daya forecast and the Bar chart
 
-            st.subheader("3-Day Temperature Forecast")
+            st.subheader("3-Day temperature forecast")
             # Ensure proper rounding for display
             forecast_df[["Max Temp (°C)", "Min Temp (°C)"]] = forecast_df[["Max Temp (°C)", "Min Temp (°C)"]].round(1)
 
@@ -130,7 +130,7 @@ if city:
             st.pyplot(plt)
 
         # Historical Data
-        st.subheader("Historical Comparison")
+        st.subheader("Historical data comparison")
         today = datetime.now()
         past_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
         historical_data = fetch_historical(city, past_date)
