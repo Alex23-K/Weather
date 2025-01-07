@@ -1,28 +1,25 @@
 import streamlit as st
+import requests
 import pandas as pd
 import matplotlib.pyplot as plt
-import requests
 from datetime import datetime, timedelta
 
-
-# API Key and Base URL
-API_KEY = "f935fae84b5f4044931182757250501"
-BASE_URL = "http://api.weatherapi.com/v1/current.json"
+# Constants
+API_KEY = "YOUR_API_KEY"
+BASE_URL_CURRENT = "http://api.weatherapi.com/v1/current.json"
 BASE_URL_FORECAST = "http://api.weatherapi.com/v1/forecast.json"
 BASE_URL_HISTORY = "http://api.weatherapi.com/v1/history.json"
 
-
+# Helper functions
 def fetch_weather(city):
     """
     Fetch weather data for the given city using WeatherAPI.
     """
-    url = f"{BASE_URL}?key={API_KEY}&q={city}"
+    url = f"{BASE_URL_CURRENT}?key={API_KEY}&q={city}"
     response = requests.get(url)
-
     if response.status_code == 200:
         return response.json()
-    else:
-        return None
+    return None
 
 def fetch_forecast(city, days=3):
     """
@@ -34,7 +31,6 @@ def fetch_forecast(city, days=3):
         return response.json()
     return None
 
-
 def fetch_historical(city, date):
     """
     Fetch historical weather data for a given city and date using WeatherAPI.
@@ -45,22 +41,18 @@ def fetch_historical(city, date):
         return response.json()
     return None
 
-
 # Streamlit UI
-st.title("Welcome to the best weather App \n"
-         "Check the weather in any city worldwide")
+st.title("Enhanced Weather Checker Application")
 
 # Make the input prompt larger
 st.markdown("### What is the city's name you would like to check?")
 
 # Adjust the input field width
-city = st.text_input("", "", max_chars=25)
-
+city = st.text_input("", "", max_chars=50)
 
 # Auto-correct for Holon to default to Israel
 if city.lower() == "holon":
     city = "Holon, Israel"
-
 
 if city:
     weather_data = fetch_weather(city)
@@ -74,28 +66,28 @@ if city:
 
         st.subheader(f"Weather in {location}")
         st.image(icon_url, width=100)
-        st.write(f"**Current temperature:** {temp_c}°C")
+        st.write(f"**Temperature:** {temp_c}°C")
         st.write(f"**Feels Like:** {feels_like}°C")
         st.write(f"**Condition:** {condition}")
-
 
         # Forecast
         forecast_data = fetch_forecast(city)
         if forecast_data:
-
+            st.subheader("Rainy Days Forecast")
             forecast_days = forecast_data['forecast']['forecastday']
+            rainy_days = [
+                f"On {datetime.strptime(day['date'], '%Y-%m-%d').strftime('%d/%m/%Y')}, it will be rainy with a condition: {day['day']['condition']['text']}."
+                for day in forecast_days if day['day']['daily_chance_of_rain'] > 50
+            ]
 
-            # Calculate average chance of rain
-            avg_rain_chance = sum(day['day']['daily_chance_of_rain'] for day in forecast_days) / len(forecast_days)
-
-            # Determine the most frequent weather condition
-            conditions = [day['day']['condition']['text'] for day in forecast_days]
-            most_frequent_condition = max(set(conditions), key=conditions.count).lower()
-
-
+            if rainy_days:
+                for message in rainy_days:
+                    st.write(message)
+            else:
+                st.write("No rainy days are expected in the forecast.")
 
             # 3-Day Forecast Table
-
+            st.subheader("3-Day Forecast")
             forecast_df = pd.DataFrame([
                 {
                     "Date": datetime.strptime(day['date'], "%Y-%m-%d").strftime("%d/%m/%Y"),
@@ -104,23 +96,13 @@ if city:
                 }
                 for day in forecast_days
             ])
+            # Format numerical columns explicitly
+            forecast_df["Max Temp (°C)"] = forecast_df["Max Temp (°C)"].map("{:.1f}".format)
+            forecast_df["Min Temp (°C)"] = forecast_df["Min Temp (°C)"].map("{:.1f}".format)
+            st.table(forecast_df)
 
-
-            # 3 daya forecast and the Bar chart
-
-            st.subheader("3-Day Temperature Forecast")
-            # Ensure proper rounding for display
-            forecast_df[["Max Temp (°C)", "Min Temp (°C)"]] = forecast_df[["Max Temp (°C)", "Min Temp (°C)"]].round(1)
-
-            # Generate summary sentence
-            if avg_rain_chance > 50:
-                st.write(
-                    f"The next 3 days are expected to be mostly {most_frequent_condition} with a high chance of rain.")
-            else:
-                st.write(
-                    f"The next 3 days are expected to be mostly {most_frequent_condition} with no rain expectancy.")
-
-
+            # Bar Graph for Forecast
+            st.subheader("Temperature Forecast")
             forecast_df.set_index("Date", inplace=True)
             forecast_df.plot(kind='bar', figsize=(8, 5))
             plt.title("Temperature Forecast (°C)")
@@ -138,8 +120,8 @@ if city:
             historical_temp = historical_data['forecast']['forecastday'][0]['day']['avgtemp_c']
             temp_difference = temp_c - historical_temp
             if temp_difference > 0:
-                st.write(f"**Today is warmer by {temp_difference:.1f}°C compared to the previous year in the same week (was {historical_temp:.1f}°C).**")
+                st.write(f"**Today is warmer by {temp_difference:.1f}°C compared to the same week one year ago (was {historical_temp:.1f}°C).**")
             else:
-                st.write(f"**Today is colder by {abs(temp_difference):.1f}°C compared to the previous year in the same week (was {historical_temp:.1f}°C).**")
+                st.write(f"**Today is colder by {abs(temp_difference):.1f}°C compared to the same week one year ago (was {historical_temp:.1f}°C).**")
     else:
         st.error("Failed to fetch weather data. Please check the city name and try again.")
