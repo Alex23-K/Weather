@@ -91,8 +91,6 @@ if city:
             today_date = datetime.now().strftime('%Y-%m-%d')
             future_days = [day for day in forecast_days if day['date'] != today_date][:3]  # Keep only 3 future days
 
-            # Calculate average chance of rain
-            avg_rain_chance = sum(day['day']['daily_chance_of_rain'] for day in future_days) / len(future_days)
 
             # Determine the most frequent weather condition
             conditions = [day['day']['condition']['text'] for day in future_days]
@@ -111,7 +109,8 @@ if city:
 
             # 3-Day Forecast Bar Chart and summary for the condition
 
-
+            # Calculate average chance of rain
+            avg_rain_chance = sum(day['day']['daily_chance_of_rain'] for day in future_days) / len(future_days)
 
             st.subheader("3-Day temperature forecast")
 
