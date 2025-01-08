@@ -6,7 +6,7 @@ Link: https://weather-project-alex.streamlit.app/
 Features
 🌍 Real-Time Weather Information
 Displays the current temperature, "feels like" temperature, and general weather conditions.
-Automatically corrects the city name for specific cases (e.g., Holon is assumed to be in Israel).
+
 📅 3-Day Weather Forecast
 Provides a summary of the next three days, including:
 Maximum and minimum temperatures.
