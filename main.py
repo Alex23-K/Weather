@@ -136,7 +136,7 @@ if city:
         # Historical Data
         st.subheader("Historical data comparison")
         today = datetime.now()
-        past_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        past_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')  # Same day last year
         historical_data = fetch_historical(city, past_date)
         if historical_data:
             historical_temp = historical_data['forecast']['forecastday'][0]['day']['avgtemp_c']
