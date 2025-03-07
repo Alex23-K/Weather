@@ -8,15 +8,18 @@ import pytz
 # Define the Jerusalem timezone
 jerusalem_tz = pytz.timezone('Asia/Jerusalem')
 
-# API Key and Base URLs (using HTTPS)
+# API Key and Base URL (using HTTPS)
 API_KEY = st.secrets["API_KEY"]
+
 BASE_URL = "https://api.weatherapi.com/v1/current.json"
 BASE_URL_FORECAST = "https://api.weatherapi.com/v1/forecast.json"
 BASE_URL_HISTORY = "https://api.weatherapi.com/v1/history.json"
 
 
 def fetch_weather(city):
-    """Fetch current weather data for the given city."""
+    """
+    Fetch current weather data for the given city.
+    """
     url = f"{BASE_URL}?key={API_KEY}&q={city}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -25,7 +28,9 @@ def fetch_weather(city):
 
 
 def fetch_forecast(city, days=4):
-    """Fetch forecast data for the given city."""
+    """
+    Fetch forecast data for the given city.
+    """
     url = f"{BASE_URL_FORECAST}?key={API_KEY}&q={city}&days={days}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -34,15 +39,13 @@ def fetch_forecast(city, days=4):
 
 
 def fetch_historical(city, date):
-    """Fetch historical weather data for the given city and date."""
+    """
+    Fetch historical weather data for the given city and date.
+    """
     url = f"{BASE_URL_HISTORY}?key={API_KEY}&q={city}&dt={date}"
     response = requests.get(url)
     if response.status_code == 200:
-        data = response.json()
-        # Check if the API returned an error in the JSON response
-        if "error" in data:
-            return None
-        return data
+        return response.json()
     return None
 
 
@@ -119,7 +122,7 @@ if city:
         st.subheader("Historical Data Comparison")
         past_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')  # Same day last year
         historical_data = fetch_historical(city, past_date)
-        if historical_data and 'forecast' in historical_data:
+        if historical_data:
             historical_temp = historical_data['forecast']['forecastday'][0]['day']['avgtemp_c']
             temp_difference = temp_c - historical_temp
             if temp_difference > 0:
@@ -129,10 +132,6 @@ if city:
                 st.write(
                     f"**Today is colder by {abs(temp_difference):.1f}°C compared to the same day last year (was {historical_temp:.1f}°C).**")
         else:
-            st.error(
-                "Failed to fetch historical data. Historical data for the requested date (same day last year) "
-                "may not be available with your current API plan. Note that many free WeatherAPI plans only "
-                "support historical data for the past 7 days."
-            )
+            st.error("Failed to fetch historical data.")
     else:
         st.error("Failed to fetch weather data. Please check the city name and try again.")
