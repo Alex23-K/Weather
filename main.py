@@ -15,6 +15,10 @@ BASE_URL_FORECAST = "http://api.weatherapi.com/v1/forecast.json"
 BASE_URL_HISTORY = "http://api.weatherapi.com/v1/history.json"
 
 
+st.write("Secrets:", st.secrets)  # This will display the secrets in Streamlit
+
+
+
 def fetch_weather(city):
     """Fetch current weather data for the given city."""
     url = f"{BASE_URL}?key={API_KEY}&q={city}"
