@@ -6,13 +6,19 @@ import requests
 from datetime import datetime, timedelta
 import pytz
 
+
 # Define the Jerusalem timezone
 jerusalem_tz = pytz.timezone('Asia/Jerusalem')
 
-# Secure API Key Retrieval
-API_KEY = st.secrets.get("weather_api_key") or os.getenv("WEATHER_API_KEY")
+# Retrieve API Key from environment variables
+API_KEY = os.getenv("WEATHER_API_KEY")
+
+# Check if API key exists
 if not API_KEY:
-    st.warning("⚠️ API key is missing! Please check your Streamlit Secrets or environment variables.")
+    st.error("⚠️ API key is missing! Set it as an environment variable: WEATHER_API_KEY")
+else:
+    st.success("✅ API Key Loaded Successfully!")
+    
 
 # API Base URLs
 BASE_URL = "http://api.weatherapi.com/v1/current.json"
