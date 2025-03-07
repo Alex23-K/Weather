@@ -39,12 +39,19 @@ def fetch_forecast(city, days=4):
 
 
 def fetch_historical(city, date):
-    """Fetch historical weather data for a given city and date."""
+    """Fetch historical weather data for a given city and date using WeatherAPI."""
     url = f"{BASE_URL_HISTORY}?key={API_KEY}&q={city}&dt={date}"
     response = requests.get(url)
+
     if response.status_code == 200:
-        return response.json()
-    return None
+        data = response.json()
+        st.write("📊 **API Response for Historical Data:**", data)  # Debugging output
+        return data
+    else:
+        st.write("❌ **API Error:**", response.status_code, response.text)  # Debugging output
+        return None
+
+
 
 
 # 🔹 Streamlit UI
