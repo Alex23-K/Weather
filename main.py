@@ -42,9 +42,14 @@ def fetch_historical(city, date):
     """Fetch historical weather data for a given city and date."""
     url = f"{BASE_URL_HISTORY}?key={API_KEY}&q={city}&dt={date}"
     response = requests.get(url)
+
     if response.status_code == 200:
-        return response.json()
-    return None
+        data = response.json()
+        st.write("📊 **API Response for Historical Data:**", data)  # Debugging output
+        return data
+    else:
+        st.write("❌ **API Error:**", response.status_code, response.text)  # Debugging output
+        return None
 
 
 # 🔹 Streamlit UI
@@ -122,34 +127,39 @@ if city:
 
         if historical_data and "forecast" in historical_data:
             try:
-                historical_temp = historical_data['forecast']['forecastday'][0]['day'].get('avgtemp_c', None)
+                forecast_day = historical_data['forecast'].get('forecastday', [])
 
-                if historical_temp is None:
+                if not forecast_day:
                     st.warning("⚠️ No historical temperature data available for this date.")
                 else:
-                    temp_difference = temp_c - historical_temp
-                    difference_text = (
-                        f"📈 Today is **warmer** by {temp_difference:.1f}°C compared to last year."
-                        if temp_difference > 0
-                        else f"📉 Today is **colder** by {abs(temp_difference):.1f}°C compared to last year."
-                    )
+                    historical_temp = forecast_day[0]['day'].get('avgtemp_c', None)
 
-                    # 🔹 Clear figure before plotting
-                    plt.clf()
+                    if historical_temp is None:
+                        st.warning("⚠️ Temperature data is missing in API response.")
+                    else:
+                        temp_difference = temp_c - historical_temp
+                        difference_text = (
+                            f"📈 Today is **warmer** by {temp_difference:.1f}°C compared to last year."
+                            if temp_difference > 0
+                            else f"📉 Today is **colder** by {abs(temp_difference):.1f}°C compared to last year."
+                        )
 
-                    # Historical comparison bar chart
-                    history_df = pd.DataFrame({
-                        "Date": ["Today", "Last Year"],
-                        "Temperature (°C)": [temp_c, historical_temp]
-                    })
-                    history_df.set_index("Date", inplace=True)
+                        # 🔹 Clear figure before plotting
+                        plt.clf()
 
-                    st.write(difference_text)
-                    history_df.plot(kind='bar', color=["#1f77b4", "#ff7f0e"], figsize=(5, 4))
-                    plt.title("Temperature Comparison (°C)")
-                    plt.ylabel("Temperature (°C)")
-                    plt.xticks(rotation=0)
-                    st.pyplot(plt)
+                        # Historical comparison bar chart
+                        history_df = pd.DataFrame({
+                            "Date": ["Today", "Last Year"],
+                            "Temperature (°C)": [temp_c, historical_temp]
+                        })
+                        history_df.set_index("Date", inplace=True)
+
+                        st.write(difference_text)
+                        history_df.plot(kind='bar', color=["#1f77b4", "#ff7f0e"], figsize=(5, 4))
+                        plt.title("Temperature Comparison (°C)")
+                        plt.ylabel("Temperature (°C)")
+                        plt.xticks(rotation=0)
+                        st.pyplot(plt)
 
             except (KeyError, IndexError):
                 st.warning("⚠️ Historical data format is incorrect or missing.")
