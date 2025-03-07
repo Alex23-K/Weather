@@ -9,10 +9,7 @@ import pytz
 jerusalem_tz = pytz.timezone('Asia/Jerusalem')
 
 # API Key and Base URL
-# API_KEY = "f935fae84b5f4044931182757250501"
-
-API_KEY = st.secrets["API_KEY"]
-
+API_KEY = "f935fae84b5f4044931182757250501"
 BASE_URL = "http://api.weatherapi.com/v1/current.json"
 BASE_URL_FORECAST = "http://api.weatherapi.com/v1/forecast.json"
 BASE_URL_HISTORY = "http://api.weatherapi.com/v1/history.json"
@@ -150,4 +147,4 @@ if city:
     else:
         st.error("Failed to fetch weather data. Please check the city name and try again.")
 
-
+        
